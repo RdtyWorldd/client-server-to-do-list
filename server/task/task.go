@@ -11,6 +11,7 @@ const (
 )
 
 type Task struct {
+	OwnerID     int       `json:"owner"`
 	ID          int       `json:"id"`
 	Description string    `json:"description"`
 	Status      Progress  `json:"status"`
