@@ -6,15 +6,14 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/RdtyWorldd/client-server-to-do-list/server/client"
-	"github.com/RdtyWorldd/client-server-to-do-list/server/dao"
+	"github.com/RdtyWorldd/client-server-to-do-list/server/client/dao"
 )
 
 type LoginHandler struct {
-	dao dao.CrudDao[client.Client]
+	dao dao.ClientDao
 }
 
-func NewLoginHandler(dao dao.CrudDao[client.Client]) *LoginHandler {
+func NewLoginHandler(dao dao.ClientDao) *LoginHandler {
 	return &LoginHandler{dao}
 }
 func (handler *LoginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

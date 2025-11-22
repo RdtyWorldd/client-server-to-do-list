@@ -6,17 +6,16 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/RdtyWorldd/client-server-to-do-list/server/client"
-	"github.com/RdtyWorldd/client-server-to-do-list/server/dao"
+	"github.com/RdtyWorldd/client-server-to-do-list/server/client/dao"
 	"github.com/RdtyWorldd/client-server-to-do-list/server/task"
 )
 
 type TaskListHandler struct {
-	client_dao dao.CrudDao[client.Client]
-	task_dao   dao.CrudDao[task.Task]
+	client_dao dao.ClientDao
+	task_dao   task.TaskDao
 }
 
-func NewTaskListHandler(client_dao dao.CrudDao[client.Client], task_dao dao.CrudDao[task.Task]) *TaskListHandler {
+func NewTaskListHandler(client_dao dao.ClientDao, task_dao task.TaskDao) *TaskListHandler {
 	return &TaskListHandler{client_dao, task_dao}
 }
 

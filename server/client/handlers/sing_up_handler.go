@@ -7,14 +7,14 @@ import (
 	"net/http"
 
 	"github.com/RdtyWorldd/client-server-to-do-list/server/client"
-	"github.com/RdtyWorldd/client-server-to-do-list/server/dao"
+	"github.com/RdtyWorldd/client-server-to-do-list/server/client/dao"
 )
 
 type SignUpHandler struct {
-	dao dao.CrudDao[client.Client]
+	dao dao.ClientDao
 }
 
-func NewSingUpHandler(dao dao.CrudDao[client.Client]) *SignUpHandler {
+func NewSingUpHandler(dao dao.ClientDao) *SignUpHandler {
 	return &SignUpHandler{dao}
 }
 

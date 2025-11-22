@@ -8,15 +8,17 @@ import (
 	"sort"
 
 	"github.com/RdtyWorldd/client-server-to-do-list/server/client"
+	"github.com/RdtyWorldd/client-server-to-do-list/server/task"
 )
 
 type FileClientDao struct {
-	path      string
-	clientMap map[int]client.Client
+	path_client string
+	clientMap   map[int]client.Client
+	task_dao    task.TaskDao
 }
 
-func NewFileClientDao(path string) *FileClientDao {
-	file, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0666)
+func NewFileClientDao(path_client string) *FileClientDao {
+	file, err := os.OpenFile(path_client, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -26,7 +28,7 @@ func NewFileClientDao(path string) *FileClientDao {
 	if err != nil {
 		panic(err)
 	}
-	dao := FileClientDao{path, make(map[int]client.Client)}
+	dao := FileClientDao{path_client, make(map[int]client.Client), nil}
 	if len(data) != 0 {
 		var clients []client.Client
 		err = json.Unmarshal(data, &clients)
@@ -43,7 +45,7 @@ func NewFileClientDao(path string) *FileClientDao {
 // question
 // нужно ли проверять индекс или доверяться обработчикам комманд
 func (dao *FileClientDao) Create(client client.Client) error {
-	file, err := os.OpenFile(dao.path, os.O_WRONLY, 0666)
+	file, err := os.OpenFile(dao.path_client, os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}
@@ -97,7 +99,7 @@ func (dao *FileClientDao) Update(id int, upd client.Client) error {
 		return errors.New("index out of range")
 	}
 	dao.clientMap[id] = upd
-	file, err := os.OpenFile(dao.path, os.O_WRONLY, 0666)
+	file, err := os.OpenFile(dao.path_client, os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}
@@ -120,7 +122,7 @@ func (dao *FileClientDao) Delete(id int) error {
 		return errors.New("index out of range") //пусть пока повисит пустая таска
 	}
 	dao.delete_client(id)
-	file, err := os.OpenFile(dao.path, os.O_WRONLY, 0666)
+	file, err := os.OpenFile(dao.path_client, os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}
@@ -148,13 +150,4 @@ func (dao FileClientDao) marshal() ([]byte, error) {
 
 func (dao *FileClientDao) delete_client(id int) {
 	delete(dao.clientMap, id)
-	client_list := make([]client.Client, 0, len(dao.clientMap))
-	for _, value := range dao.clientMap {
-		client_list = append(client_list, value)
-	}
-
-	dao.clientMap = make(map[int]client.Client)
-	for _, value := range client_list {
-		dao.clientMap[value.GetID()] = value
-	}
 }
