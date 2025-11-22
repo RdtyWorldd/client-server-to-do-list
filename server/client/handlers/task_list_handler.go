@@ -7,16 +7,14 @@ import (
 	"strconv"
 
 	"github.com/RdtyWorldd/client-server-to-do-list/server/client/dao"
-	"github.com/RdtyWorldd/client-server-to-do-list/server/task"
 )
 
 type TaskListHandler struct {
 	client_dao dao.ClientDao
-	task_dao   task.TaskDao
 }
 
-func NewTaskListHandler(client_dao dao.ClientDao, task_dao task.TaskDao) *TaskListHandler {
-	return &TaskListHandler{client_dao, task_dao}
+func NewTaskListHandler(client_dao dao.ClientDao) *TaskListHandler {
+	return &TaskListHandler{client_dao}
 }
 
 func (handler *TaskListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -35,17 +33,11 @@ func (handler *TaskListHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		log.Panic(err)
 	}
-	_, err = handler.client_dao.Read(c_id)
+
+	client, err := handler.client_dao.Read(c_id)
 	if err != nil {
 
 	}
-	tasks := handler.task_dao.ReadAll()
-	var client_tasks []task.Task
-	for _, value := range tasks {
-		if value.OwnerID == c_id {
-			client_tasks = append(client_tasks, value)
-		}
-	}
-	marshaled, _ := json.Marshal(client_tasks)
+	marshaled, _ := json.Marshal(client.GetTaskList())
 	w.Write(marshaled)
 }

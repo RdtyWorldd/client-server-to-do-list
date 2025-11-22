@@ -17,7 +17,7 @@ type FileClientDao struct {
 	task_dao    task.TaskDao
 }
 
-func NewFileClientDao(path_client string) *FileClientDao {
+func NewFileClientDao(path_client string, task_dao task.TaskDao) *FileClientDao {
 	file, err := os.OpenFile(path_client, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		panic(err)
@@ -28,14 +28,20 @@ func NewFileClientDao(path_client string) *FileClientDao {
 	if err != nil {
 		panic(err)
 	}
-	dao := FileClientDao{path_client, make(map[int]client.Client), nil}
+	dao := FileClientDao{path_client, make(map[int]client.Client), task_dao}
 	if len(data) != 0 {
 		var clients []client.Client
 		err = json.Unmarshal(data, &clients)
 		if err != nil {
 			panic(err)
 		}
+		task_list := dao.task_dao.ReadAll()
 		for i, value := range clients {
+			for _, task := range task_list { //need optimization
+				if task.OwnerID == value.GetID() {
+					value.AddTask(task)
+				}
+			}
 			dao.clientMap[clients[i].GetID()] = value
 		}
 	}
