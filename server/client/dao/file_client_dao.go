@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/RdtyWorldd/client-server-to-do-list/server/client"
 	"github.com/RdtyWorldd/client-server-to-do-list/server/task"
@@ -48,8 +49,6 @@ func NewFileClientDao(path_client string, task_dao task.TaskDao) *FileClientDao 
 	return &dao
 }
 
-// question
-// нужно ли проверять индекс или доверяться обработчикам комманд
 func (dao *FileClientDao) Create(client client.Client) error {
 	file, err := os.OpenFile(dao.path_client, os.O_WRONLY, 0666)
 	if err != nil {
@@ -156,4 +155,64 @@ func (dao FileClientDao) marshal() ([]byte, error) {
 
 func (dao *FileClientDao) delete_client(id int) {
 	delete(dao.clientMap, id)
+}
+
+func (dao *FileClientDao) AddTask(c_id int, task task.Task) (client.Client, error) {
+	c, ok := dao.clientMap[c_id]
+	if !ok {
+		return client.Client{}, errors.New("no clients with current c_id")
+	}
+
+	t_id := len(c.GetTaskList())
+
+	task.OwnerID = c_id
+	task.ID = t_id
+	task.CreatedAt = time.Now()
+	task.UpdatedAt = task.CreatedAt
+
+	err := dao.task_dao.Create(task)
+	if err != nil {
+		//написать что чет не получилось добавить таску
+		return c, errors.New("Cant create new task")
+	}
+
+	c.AddTask(task)
+	dao.clientMap[c_id] = c
+	return c, nil
+}
+
+func (dao *FileClientDao) DeleteTask(c_id int, t_id int) (client.Client, error) {
+	//добавить в ошибки конкретные передаваемые параметры
+	c, ok := dao.clientMap[c_id]
+	if !ok {
+		return client.Client{}, errors.New("no clients with current c_id")
+	}
+	if t_id < 0 || t_id >= len(c.GetTaskList()) {
+		return client.Client{}, errors.New("client didn't have task with current t_id")
+	}
+
+	dao.task_dao.Delete(struct {
+		C_id int
+		T_id int
+	}{c_id, t_id})
+	c.RemoveTask(t_id)
+	dao.clientMap[c_id] = c
+	return c, nil
+}
+
+func (dao *FileClientDao) UpdateTask(c_id int, t task.Task) (client.Client, error) {
+	c, ok := dao.clientMap[c_id]
+	if !ok {
+		return client.Client{}, errors.New("no clients with current c_id")
+	}
+	if t.ID < 0 || t.ID >= len(c.GetTaskList()) {
+		return client.Client{}, errors.New("client didn't have task with current t_id")
+	}
+
+	dao.task_dao.Update(struct {
+		C_id int
+		T_id int
+	}{c_id, t.ID}, t)
+	c.GetTaskList()[t.ID] = t
+	return c, nil
 }
