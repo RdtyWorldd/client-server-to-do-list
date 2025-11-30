@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"slices"
 	"sort"
 	"time"
 
@@ -163,7 +164,7 @@ func (dao *FileClientDao) AddTask(c_id int, task task.Task) (client.Client, erro
 		return client.Client{}, errors.New("no clients with current c_id")
 	}
 
-	t_id := len(c.GetTaskList())
+	t_id := len(c.GetTaskList()) + 1
 
 	task.OwnerID = c_id
 	task.ID = t_id
@@ -187,14 +188,17 @@ func (dao *FileClientDao) DeleteTask(c_id int, t_id int) (client.Client, error) 
 	if !ok {
 		return client.Client{}, errors.New("no clients with current c_id")
 	}
-	if t_id < 0 || t_id >= len(c.GetTaskList()) {
+	if t_id < 0 || t_id > len(c.GetTaskList()) {
 		return client.Client{}, errors.New("client didn't have task with current t_id")
 	}
 
-	dao.task_dao.Delete(struct {
+	err := dao.task_dao.Delete(struct {
 		C_id int
 		T_id int
 	}{c_id, t_id})
+	if err != nil {
+		return client.Client{}, err
+	}
 	c.RemoveTask(t_id)
 	dao.clientMap[c_id] = c
 	return c, nil
@@ -205,14 +209,21 @@ func (dao *FileClientDao) UpdateTask(c_id int, t task.Task) (client.Client, erro
 	if !ok {
 		return client.Client{}, errors.New("no clients with current c_id")
 	}
-	if t.ID < 0 || t.ID >= len(c.GetTaskList()) {
+	if t.ID < 0 || t.ID > len(c.GetTaskList()) {
 		return client.Client{}, errors.New("client didn't have task with current t_id")
 	}
 
-	dao.task_dao.Update(struct {
+	err := dao.task_dao.Update(struct {
 		C_id int
 		T_id int
 	}{c_id, t.ID}, t)
-	c.GetTaskList()[t.ID] = t
+	if err != nil {
+		return client.Client{}, err
+	}
+	index := slices.IndexFunc(c.GetTaskList(), func(n task.Task) bool {
+		return n.ID == t.ID
+	})
+	c.GetTaskList()[index] = t
+	dao.clientMap[c_id] = c
 	return c, nil
 }

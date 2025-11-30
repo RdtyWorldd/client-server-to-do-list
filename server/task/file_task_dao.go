@@ -117,7 +117,7 @@ func (dao *FileTaskDao) Delete(key struct{ C_id, T_id int }) error {
 	if _, ok := dao.taskMap[key]; !ok {
 		return errors.New("index out of range")
 	}
-	dao.delete_task(key)
+	delete(dao.taskMap, key)
 	file, err := os.OpenFile(dao.path, os.O_WRONLY, 0666)
 	if err != nil {
 		return err
@@ -142,14 +142,4 @@ func (dao FileTaskDao) marshal() ([]byte, error) {
 		task_list = append(task_list, value)
 	}
 	return json.Marshal(task_list)
-}
-
-func (dao *FileTaskDao) delete_task(key struct{ C_id, T_id int }) {
-	delete(dao.taskMap, key)
-	for i, value := range dao.taskMap {
-		if value.OwnerID == key.C_id && value.ID != 1 {
-			value.ID -= 1
-			dao.taskMap[i] = value
-		}
-	}
 }
